@@ -18,7 +18,7 @@ Sent attributes are :
 
 The code contains two projects :
 
-- One to initialize the GATT attributes and GAP informations. It should be ran only once on the device.
-- One to run the logic which should be uploaded to the Feather after the initialisation has been done.
+- moisture-monitor-sensor-init-gatt: initializes the GATT attributes and GAP informations. It should be ran only once on the device.
+- moisture-monitor-sensor: the sensor logic which should be uploaded to the Feather after the initialisation has been done.
 
 Code could be run in Arduino IDE : https://www.arduino.cc/en/Main/Software
