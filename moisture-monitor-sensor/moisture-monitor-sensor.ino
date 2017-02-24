@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #if not defined (_VARIANT_ARDUINO_DUE_X_) && not defined (_VARIANT_ARDUINO_ZERO_)
-  #include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 #endif
 
 #include "Adafruit_BLE.h"
@@ -20,8 +20,8 @@
                               "DISABLE" or "MODE" or "BLEUART" or
                               "HWUART"  or "SPI"  or "MANUAL"
     -----------------------------------------------------------------------*/
-    #define MINIMUM_FIRMWARE_VERSION    "0.7.7"
-    #define MODE_LED_BEHAVIOUR          "SPI"
+#define MINIMUM_FIRMWARE_VERSION    "0.7.7"
+#define MODE_LED_BEHAVIOUR          "SPI"
 /*=========================================================================*/
 
 /* ...hardware SPI, using SCK/MOSI/MISO hardware SPI pins and then user selected CS/IRQ/RST */
@@ -34,7 +34,7 @@ const String MOISTURE_CHAR = "3";
 const String BATTERY_CHAR = "4";
 
 /* Red led PIN */
-#define LED_PIN 13    
+#define LED_PIN 13
 
 /* Init DHT sensor */
 #include "DHT.h"
@@ -63,7 +63,7 @@ void error(String err) {
 }
 
 boolean initBluetooth() {
-    /* Initialise the module */
+  /* Initialise the module */
   Serial.println(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) ) {
@@ -71,7 +71,7 @@ boolean initBluetooth() {
     return false;
   }
   else {
-    Serial.println( F("OK!") );    
+    Serial.println( F("OK!") );
   }
 
   /* Disable command echo from Bluefruit */
@@ -98,7 +98,7 @@ boolean initBluetooth() {
 }
 
 void putDeviceInFailMode() {
-  while(1) {
+  while (1) {
     blink(2000, 500);
   }
 }
@@ -107,14 +107,13 @@ unsigned long blink(unsigned long highDelay, unsigned long lowDelay) {
   digitalWrite(LED_PIN, HIGH);
   delay(highDelay);
   digitalWrite(LED_PIN, LOW);
-  delay(lowDelay);  
+  delay(lowDelay);
 
   return highDelay + lowDelay;
 }
 
 void setup() {
-  while (!Serial);  // required for Flora & Micro
-  delay(500);
+  delay(2000);
 
   Serial.begin(115200);
 
@@ -135,13 +134,13 @@ float readBatteryVoltage() {
   measuredvbat *= 2;    // we divided by 2, so multiply back
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
-  
+
   return measuredvbat;
 }
 
 float getBatteryInPercent() {
   float batteryVoltage = readBatteryVoltage();
-  
+
   return min(((batteryVoltage - BAT_MIN) / (BAT_MAX - BAT_MIN)) * 100.0, 100.0);
 }
 
@@ -155,56 +154,40 @@ String floatToString(float f) {
 }
 
 void setGattAttrValue(String attrId, String value) {
-    String gattCommand = "AT+GATTCHAR=" + attrId + ","+ value;
-    ble.println( gattCommand ); 
-    if ( !ble.waitForOK() )
-    {
-      error("Gatt attribute update failed for attrId " + attrId + " and value " + value);
-    }
-    else {
-      Serial.println("Gatt attribute " + attrId + " updated to value " + value);    
-    }
+  String gattCommand = "AT+GATTCHAR=" + attrId + "," + value;
+  ble.println( gattCommand );
+  if ( !ble.waitForOK() )
+  {
+    error("Gatt attribute update failed for attrId " + attrId + " and value " + value);
+  }
+  else {
+    Serial.println("Gatt attribute " + attrId + " updated to value " + value);
+  }
 }
 
 void loop() {
-  if (!ble.isConnected()) {
-    Serial.println(F("Waiting for connection"));
-  }
-  
   unsigned long timeSpent = 0;
 
-  /* Wait SLEEP_TIME_WAIT_FOR_CONNECTION for connection */
-  while (!ble.isConnected() && timeSpent < SLEEP_TIME_WAIT_FOR_CONNECTION) {
-      timeSpent += blink(500, 500);
-  }  
+  digitalWrite(LED_PIN, HIGH);
 
-  if (ble.isConnected()) {
-    digitalWrite(LED_PIN, HIGH);
-    
-    Serial.println(F("Connected"));
+  String battery = floatToString(getBatteryInPercent());
+  Serial.println("Battery: " + battery);
 
-    String battery = floatToString(getBatteryInPercent());
-    Serial.println("Battery: " + battery); 
+  String humidity = floatToString(dht.readHumidity());
+  Serial.println("Humidity: " + humidity);
 
-    String humidity = floatToString(dht.readHumidity());
-    Serial.println("Humidity: " + humidity);
+  String temperature = floatToString(dht.readTemperature());
+  Serial.println("Temperature: " + temperature);
 
-    String temperature = floatToString(dht.readTemperature());
-    Serial.println("Temperature: " + temperature);
+  setGattAttrValue(NEW_MEASURE_CHAR, "1");
+  setGattAttrValue(BATTERY_CHAR, battery);
+  setGattAttrValue(MOISTURE_CHAR, humidity);
+  setGattAttrValue(TEMPERATURE_CHAR, temperature);
 
-    setGattAttrValue(NEW_MEASURE_CHAR, "1");
-    setGattAttrValue(BATTERY_CHAR, battery);
-    setGattAttrValue(MOISTURE_CHAR, humidity);
-    setGattAttrValue(TEMPERATURE_CHAR, temperature);
-
-    // Long blink for SLEEP_TIME_STAY_UP to indicate a new measure is ready
-    timeSpent = 0;
-    while (timeSpent < SLEEP_TIME_STAY_UP) {
-      timeSpent += blink(2000, 2000);
-    }  
-  }
-  else {
-    Serial.println(F("No connection"));    
+  // Long blink for SLEEP_TIME_STAY_UP to indicate a new measure is ready
+  timeSpent = 0;
+  while (timeSpent < SLEEP_TIME_STAY_UP) {
+    timeSpent += blink(2000, 2000);
   }
 
   digitalWrite(LED_PIN, LOW);
@@ -215,9 +198,9 @@ void loop() {
     timeSpent = 0;
     while (timeSpent < SLEEP_TIME_LOW_POWER) {
       timeSpent += Watchdog.sleep();
-    }  
+    }
   }
   else {
-    delay(SLEEP_TIME_LOW_POWER);    
+    delay(SLEEP_TIME_LOW_POWER);
   }
 }
